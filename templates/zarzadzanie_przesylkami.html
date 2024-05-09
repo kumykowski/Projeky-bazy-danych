@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Zarządzanie Przesyłkami</title>
+    <script>
+        function toggleFields(field) {
+            var single = document.getElementById('single-section');
+            var range = document.getElementById('range-section');
+    
+            var singleInput = document.getElementById('numer_pojedynczy');
+            var rangeInput1 = document.getElementById('numer_od');
+            var rangeInput2 = document.getElementById('numer_do');
+    
+            if (field === 'single') {
+                single.style.display = 'block';
+                range.style.display = 'none';
+    
+                singleInput.required = true;
+                rangeInput1.required = false;
+                rangeInput2.required = false;
+            } else if (field === 'range') {
+                range.style.display = 'block';
+                single.style.display = 'none';
+    
+                singleInput.required = false;
+                rangeInput1.required = true;
+                rangeInput2.required = true;
+            }
+        }
+    </script>
+    
+</head>
+<body>
+    <h1>Zarządzanie Przesyłkami</h1>
+    <form method="POST" action="/zarzadzanie_przesylkami">
+        <label for="numer">Numer przesyłki:</label>
+        <input type="text" id="numer" name="numer" placeholder="Wprowadź numer przesyłki" required><br><br>
+        <label for="status">Nowy status:</label>
+        <select id="status" name="status">
+            <option value="W przygotowywaniu">W przygotowywaniu</option>
+            <option value="Odebrana od nadawcy">Odebrana od nadawcy</option>
+            <option value="Przyjęta w sortowni">Przyjęta w sortowni</option>
+            <option value="W trasie">W trasie</option>
+            <option value="Wydana do doręczenia">Wydana do doręczenia</option>
+        </select><br><br>
+        <button type="submit">Zmień status</button>
+    </form>
+
+    <label><input type="radio" name="deleteType" onclick="toggleFields('single');" checked> Usuń pojedynczą przesyłkę</label>
+    <label><input type="radio" name="deleteType" onclick="toggleFields('range');"> Usuń przesyłki w zakresie</label>
+
+    <form method="POST" action="/zarzadzanie_przesylkami">
+        <div id="single-section" style="display: block;">
+            <label for="numer_pojedynczy">Numer przesyłki:</label>
+            <input type="text" id="numer_pojedynczy" name="numer_pojedynczy" placeholder="Numer przesyłki" required><br><br>
+        </div>
+        <div id="range-section" style="display: none;">
+            <label for="numer_od">Usuń przesyłki od numeru:</label>
+            <input type="text" id="numer_od" name="numer_od" placeholder="Od numeru"><br>
+            <label for="numer_do">do numeru:</label>
+            <input type="text" id="numer_do" name="numer_do" placeholder="Do numeru"><br><br>
+        </div>
+        <button type="submit">Usuń przesyłki</button>
+    </form>
+</body>
+</html>

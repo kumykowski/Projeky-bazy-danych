@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Wynik wyszukiwania</title>
+</head>
+<body>
+    <h1>Szczegóły przesyłki</h1>
+    {% if przesylka %}
+        <p>Numer przesyłki: {{ przesylka[0] }}</p>
+        <p>Od: {{ przesylka[1] }}</p>
+        <p>Do: {{ przesylka[2] }}</p>
+        <p>Gdzie nadana: {{ przesylka[3] }}</p>
+        <p>Gdzie do odbioru: {{ przesylka[4] }}</p>
+        <p>Klasa przesyłki: {{ przesylka[5] }}</p>
+        <p>Status: {{ przesylka[6] }}</p>
+    {% else %}
+        <p>Przesyłka nie znaleziona.</p>
+    {% endif %}
+    <a href="/">Powrót do strony głównej</a>
+</body>
+</html>
+Wyszukiwanie! wyszukiwanie.html
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Wyszukiwanie przesyłek</title>
+</head>
+<body>
+    <h1>Wyszukiwanie przesyłek</h1>
+    <form method="get" action="/wynik">
+        <label for="numer">Wpisz numer przesyłki:</label>
+        <input type="text" id="numer" name="numer" required>
+        <button type="submit">Szukaj</button>
+    </form>
+    <a href="/">Powrót do strony głównej</a>
+</body>
+</html>

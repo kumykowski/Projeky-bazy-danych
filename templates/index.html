@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Magazyn Przesyłek</title>
+</head>
+<body>
+    
+    <h1>Dodaj Przesyłkę</h1>
+    <form method="POST" action="/dodaj">
+        <input type="text" id="od" name="od" placeholder="Od.." required>
+        <input type="text" id="do" name="do" placeholder="Do.." required>
+        <input type="text" id="gdzie_nadana" name="gdzie_nadana" placeholder="Gdzie nadana" required>
+        <input type="text" name="gdzie_do_odbioru" placeholder="Gdzie do odbioru" required>
+        <select name="klasa">
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+        </select>
+        <select id="nazwa_firmy" name="nazwa_firmy" style="display: none;">
+            <option value="">Wybierz firmę...</option>
+        </select>
+        <div id="other-company-inputs" style="display: none;">
+            <input type="text" id="od_firm" name="od_firm" placeholder="Od.." class="company-input" disabled>
+            <input type="text" id="gdzie_nadana_firm" name="gdzie_nadana_firm" placeholder="Gdzie nadana" class="company-input" disabled>
+            <select name="klasa" class="company-input" disabled>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+            </select>
+        </div>
+        <label>
+            <input type="checkbox" id="is_company" name="is_company">
+            Przesyłka wysyłana przez firmę
+        </label>
+        <button type="submit">Dodaj</button>
+    </form>
+    
+    <a href="/dodaj_firme">Dodaj Firmę Nadawczą</a>
+
+    <h2>Szukaj Przesyłki</h2>
+    <form method="GET" action="/wynik">
+        <input type="text" name="numer" placeholder="Numer przesyłki" required>
+        <button type="submit">Szukaj</button>
+    </form>
+
+    <form method="POST" action="/zmien_status">
+        <a href="/zarzadzanie_przesylkami">zarzadzanie przesylkami</a>
+    </form>
+
+<script>
+    function toggleCompanySelect(event) {
+        console.log("Funkcja toggleCompanySelect() została wywołana.");
+        var checkBox = event.target;
+        var select = document.getElementById('nazwa_firmy');
+        var other = document.getElementById('other-company-inputs');
+        const companyInputs = document.querySelectorAll('.company-input');
+
+        if (checkBox.checked) {
+            select.style.display = 'block';
+            other.style.display = 'none';
+            companyInputs.forEach(input => {
+                input.disabled = false;
+            });
+        } else {
+            select.style.display = 'none';
+            other.style.display = 'block';
+            select.value = '';  
+            companyInputs.forEach(input => {
+                input.disabled = true;
+                input.value = '';
+            });
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const firmaSelect = document.querySelector('#nazwa_firmy');
+        const odInput = document.querySelector('#od');
+        const gdzieNadanaInput = document.querySelector('#gdzie_nadana');
+        const isCompanyCheckbox = document.querySelector('#is_company');
+
+        fetch('/firmy')
+            .then(response => response.json())
+            .then(data => {
+                const select = document.getElementById('nazwa_firmy');
+                data.forEach(firma => {
+                    const option = document.createElement('option');
+                    option.value = firma.IdFirmy;
+                    option.textContent = firma.NazwaFirmy;
+                    select.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Błąd podczas pobierania danych o firmach:', error));
+
+        firmaSelect.addEventListener('change', function() {
+            const wybranaFirma = this.value;
+            if (wybranaFirma) {
+                fetch(`/adres_nadania?nazwa_firmy=${wybranaFirma}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        gdzieNadanaInput.value = data.adres_magazynu;
+                        odInput.value = firmaSelect.options[firmaSelect.selectedIndex].text;
+                    })
+                    .catch(error => console.error('Błąd podczas pobierania adresu nadania:', error));
+            }
+        });
+
+        isCompanyCheckbox.addEventListener('change', toggleCompanySelect);
+    });
+</script>
+</body>
+</html>

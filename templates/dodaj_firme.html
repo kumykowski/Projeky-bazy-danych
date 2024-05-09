@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dodaj Firmę</title>
+</head>
+<body>
+    <h1>Dodaj Firmę</h1>
+    <form action="{{ url_for('dodaj_firme') }}" method="POST">
+        <label for="nazwa_firmy">Nazwa Firmy:</label>
+        <input type="text" id="nazwa_firmy" name="nazwa_firmy" required><br><br>
+        
+        <label for="nip">NIP:</label>
+        <input type="text" id="nip" name="nip" required><br><br>
+        
+        <label for="adres_magazynu">Adres Magazynu:</label>
+        <input type="text" id="adres_magazynu" name="adres_magazynu" required><br><br>
+        
+        <button type="submit">Dodaj</button>
+    </form>
+
+    <form action="{{ url_for('usun_firme') }}" method="POST">
+        <label for="nazwa_firmy">Wybierz firmę do usunięcia:</label>
+        <select id="nazwa_firmy" name="nazwa_firmy" required>
+            {% for firma in firmy %}
+                <option value="{{ firma.IdFirmy }}">{{ firma.NazwaFirmy }}</option>
+            {% endfor %}
+        </select><br><br>
+        <button type="submit">Usuń firmę</button>
+    </form>
+    
+</body>
+</html>
