@@ -40,20 +40,19 @@ def numer_juz_istnieje(numer):
 def index():
     return render_template('index.html')
 
-@app.route('/dodaj', methods=['POST'])
-def dodaj():
-    try:
+@app.route('/dodaj_przesylke', methods=['GET', 'POST'])
+def dodaj_przesylke():
+    if request.method == 'POST':
         od = request.form.get('od')
         if od == '':
             od = None
-
         do = request.form['do']
         gdzie_nadana = request.form['gdzie_nadana']
         gdzie_do_odbioru = request.form['gdzie_do_odbioru']
         klasa = request.form['klasa']
+        typ_przesylki = request.form.get('typ_przesylki')
         
-        is_company = request.form.get('is_company')
-        if is_company:
+        if typ_przesylki == 'firmowa':
             nazwa_firmy = request.form['nazwa_firmy']
             nip = request.form['nip']
             numer_przesylki = generuj_unikalny_numer('F')
@@ -65,11 +64,11 @@ def dodaj():
                            (numer_przesylki, od, do, gdzie_nadana, gdzie_do_odbioru, klasa))
         
         conn.commit()
-    except Exception as e:
-        print(f"Błąd podczas dodawania przesyłki: {e}")
-        return f"Błąd: {str(e)}", 500
-
-    return redirect(url_for('index'))
+        return redirect(url_for('dodaj_przesylke'))
+    else:
+        cursor.execute("SELECT IdFirmy, NazwaFirmy FROM Firmy")
+        firmy = cursor.fetchall()
+        return render_template('dodaj_przesylke.html', firmy=firmy)
 
 @app.route('/zarzadzanie_przesylkami', methods=['GET', 'POST'])
 def zarzadzanie_przesylkami():
