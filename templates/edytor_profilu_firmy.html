@@ -1,20 +1,40 @@
-SELECT 
-    dc.name AS ConstraintName
-FROM 
-    sys.default_constraints dc
-JOIN 
-    sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id
-JOIN 
-    sys.tables t ON c.object_id = t.object_id
-WHERE 
-    t.name = 'PrzesylkiOsobiste' AND c.name = 'StanPrzesylki';
+ProgrammingError
+pyodbc.ProgrammingError: ('42S22', "[42S22] [Microsoft][ODBC SQL Server Driver][SQL Server]Invalid column name 'GdzieNadana'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC SQL Server Driver][SQL Server]Could not use view or function 'Przesylki' because of binding errors. (4413); [42S22] [Microsoft][ODBC SQL Server Driver][SQL Server]Statement(s) could not be prepared. (8180)")
 
+Traceback (most recent call last)
+File "C:\Python312\Lib\site-packages\flask\app.py", line 1498, in __call__
+return self.wsgi_app(environ, start_response)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "C:\Python312\Lib\site-packages\flask\app.py", line 1476, in wsgi_app
+response = self.handle_exception(e)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+File "C:\Python312\Lib\site-packages\flask\app.py", line 1473, in wsgi_app
+response = self.full_dispatch_request()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "C:\Python312\Lib\site-packages\flask\app.py", line 882, in full_dispatch_request
+rv = self.handle_user_exception(e)
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "C:\Python312\Lib\site-packages\flask\app.py", line 880, in full_dispatch_request
+rv = self.dispatch_request()
+     ^^^^^^^^^^^^^^^^^^^^^^^
+File "C:\Python312\Lib\site-packages\flask\app.py", line 865, in dispatch_request
+return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "c:\Users\MiłoszKamiński\Documents\GitHub\Projeky-bazy-danych\main.py", line 62, in dodaj_przesylke
+numer_przesylki = generuj_unikalny_numer('P')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "c:\Users\MiłoszKamiński\Documents\GitHub\Projeky-bazy-danych\main.py", line 31, in generuj_unikalny_numer
+if not numer_juz_istnieje(numer):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^
+File "c:\Users\MiłoszKamiński\Documents\GitHub\Projeky-bazy-danych\main.py", line 35, in numer_juz_istnieje
+cursor.execute("SELECT COUNT(*) FROM Przesylki WHERE NumerPrzesylki = ?", (numer,))
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pyodbc.ProgrammingError: ('42S22', "[42S22] [Microsoft][ODBC SQL Server Driver][SQL Server]Invalid column name 'GdzieNadana'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC SQL Server Driver][SQL Server]Could not use view or function 'Przesylki' because of binding errors. (4413); [42S22] [Microsoft][ODBC SQL Server Driver][SQL Server]Statement(s) could not be prepared. (8180)")
+The debugger caught an exception in your WSGI application. You can now look at the traceback which led to the error.
+To switch between the interactive traceback and the plaintext one, you can click on the "Traceback" headline. From the text traceback you can also create a paste of it. For code execution mouse-over the frame you want to debug and click on the console icon on the right side.
 
+You can execute arbitrary Python code in the stack frames and there are some extra helpers available for introspection:
 
-    ALTER TABLE PrzesylkiOsobiste
-DROP CONSTRAINT DF_PrsesylkiOsobiste_StanPrzesylki;
-
-
-
-ALTER TABLE PrzesylkiOsobiste
-ADD CONSTRAINT DF_StanPrzesylki DEFAULT 'W trakcie przygotowywania' FOR StanPrzesylki;
+dump() shows all variables in the frame
+dump(obj) dumps all that's known about the object
+Brought to you by DON'T PANIC, your friendly Werkzeug powered traceback interpreter.
