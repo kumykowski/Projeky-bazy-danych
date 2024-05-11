@@ -1,6 +1,8 @@
 from flask import Flask, request, render_template, redirect, url_for, jsonify
 import pyodbc
 import random
+import barcode
+from barcode.writer import ImageWriter
 
 app = Flask(__name__)
 conn_str = 'Driver={SQL Server};Server=TS-0002\\SQLEXPRESS;Database=ProjektPrzesylka;Trusted_Connection=yes;'
@@ -36,6 +38,29 @@ def numer_juz_istnieje(numer):
     count = cursor.fetchone()[0]
     return count > 0
 
+def generuj_kod_kreskowy(numer_przesylki):
+    barcode_class = barcode.get_barcode_class('code128')
+    my_barcode = barcode_class(numer_przesylki, writer=ImageWriter())
+    filename = my_barcode.save(f"static/{numer_przesylki}")
+    return filename
+
+@app.route('/szukaj_kodu_kreskowego', methods=['GET', 'POST'])
+def szukaj_kodu_kreskowego():
+    if request.method == 'POST':
+        numer_przesylki = request.form['numer_przesylki']
+        try:
+            cursor.execute("SELECT * FROM Przesylki WHERE NumerPrzesylki = ?", (numer_przesylki,))
+            przesylka = cursor.fetchone()
+            if przesylka:
+                return redirect(url_for('pokaz_kod_kreskowy', filename=f"{numer_przesylki}.png"))
+            else:
+                return 'Nie znaleziono przesyłki o podanym numerze.', 404
+        except Exception as e:
+            return f"Błąd serwera: {str(e)}", 500
+    else:
+        return render_template('szukaj_kodu_kreskowego.html')
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -58,6 +83,8 @@ def dodaj_przesylke():
             numer_przesylki = generuj_unikalny_numer('F')
             cursor.execute("INSERT INTO PrzesylkiFirmowe (NumerPrzesylki, Od, Do, GdzieNadana, GdzieDoOdbioru, KlasaPrzesylki, IdFirmy) VALUES (?, ?, ?, ?, ?, ?, ?)",
                            (numer_przesylki, od, do, gdzie_nadana, gdzie_do_odbioru, klasa, None))
+            filename = generuj_kod_kreskowy(numer_przesylki)
+            return redirect(url_for('pokaz_kod_kreskowy', filename=filename.split('/')[-1]))
         else:
             numer_przesylki = generuj_unikalny_numer('P')
             cursor.execute("INSERT INTO PrzesylkiOsobiste (NumerPrzesylki, Od, Do, GdzieNadana, GdzieDoOdbioru, KlasaPrzesylki) VALUES (?, ?, ?, ?, ?, ?)",
@@ -69,6 +96,10 @@ def dodaj_przesylke():
         cursor.execute("SELECT IdFirmy, NazwaFirmy FROM Firmy")
         firmy = cursor.fetchall()
         return render_template('dodaj_przesylke.html', firmy=firmy)
+
+@app.route('/kod_kreskowy/<filename>')
+def pokaz_kod_kreskowy(filename):
+    return render_template('pokaz_kod_kreskowy.html', filename=filename)
 
 @app.route('/zarzadzanie_przesylkami', methods=['GET', 'POST'])
 def zarzadzanie_przesylkami():
