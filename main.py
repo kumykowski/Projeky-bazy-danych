@@ -44,21 +44,6 @@ def generuj_kod_kreskowy(numer_przesylki):
     filename = my_barcode.save(f"static/{numer_przesylki}")
     return filename
 
-@app.route('/szukaj_kodu_kreskowego', methods=['GET', 'POST'])
-def szukaj_kodu_kreskowego():
-    if request.method == 'POST':
-        numer_przesylki = request.form['numer_przesylki']
-        try:
-            cursor.execute("SELECT * FROM Przesylki WHERE NumerPrzesylki = ?", (numer_przesylki,))
-            przesylka = cursor.fetchone()
-            if przesylka:
-                return redirect(url_for('pokaz_kod_kreskowy', filename=f"{numer_przesylki}.png"))
-            else:
-                return 'Nie znaleziono przesyłki o podanym numerze.', 404
-        except Exception as e:
-            return f"Błąd serwera: {str(e)}", 500
-    else:
-        return render_template('szukaj_kodu_kreskowego.html')
 
 
 @app.route('/')
@@ -100,6 +85,23 @@ def dodaj_przesylke():
 @app.route('/kod_kreskowy/<filename>')
 def pokaz_kod_kreskowy(filename):
     return render_template('pokaz_kod_kreskowy.html', filename=filename)
+
+@app.route('/szukaj_kodu_kreskowego', methods=['GET', 'POST'])
+def szukaj_kodu_kreskowego():
+    if request.method == 'POST':
+        numer_przesylki = request.form['numer_przesylki']
+        try:
+            cursor.execute("SELECT * FROM Przesylki WHERE NumerPrzesylki = ?", (numer_przesylki,))
+            przesylka = cursor.fetchone()
+            if przesylka:
+                return redirect(url_for('pokaz_kod_kreskowy', filename=f"{numer_przesylki}.png"))
+            else:
+                return 'Nie znaleziono przesyłki o podanym numerze.', 404
+        except Exception as e:
+            return f"Błąd serwera: {str(e)}", 500
+    else:
+        return render_template('szukaj_kodu_kreskowego.html')
+
 
 @app.route('/zarzadzanie_przesylkami', methods=['GET', 'POST'])
 def zarzadzanie_przesylkami():
