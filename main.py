@@ -61,26 +61,27 @@ def dodaj_przesylke():
         gdzie_do_odbioru = request.form['gdzie_do_odbioru']
         klasa = request.form['klasa']
         typ_przesylki = request.form.get('typ_przesylki')
-        
+
         if typ_przesylki == 'firmowa':
             nazwa_firmy = request.form['nazwa_firmy']
             nip = request.form['nip']
             numer_przesylki = generuj_unikalny_numer('F')
             cursor.execute("INSERT INTO PrzesylkiFirmowe (NumerPrzesylki, Od, Do, GdzieNadana, GdzieDoOdbioru, KlasaPrzesylki, IdFirmy) VALUES (?, ?, ?, ?, ?, ?, ?)",
                            (numer_przesylki, od, do, gdzie_nadana, gdzie_do_odbioru, klasa, None))
-            filename = generuj_kod_kreskowy(numer_przesylki)
-            return redirect(url_for('pokaz_kod_kreskowy', filename=filename.split('/')[-1]))
         else:
             numer_przesylki = generuj_unikalny_numer('P')
             cursor.execute("INSERT INTO PrzesylkiOsobiste (NumerPrzesylki, Od, Do, GdzieNadana, GdzieDoOdbioru, KlasaPrzesylki) VALUES (?, ?, ?, ?, ?, ?)",
                            (numer_przesylki, od, do, gdzie_nadana, gdzie_do_odbioru, klasa))
-        
+
         conn.commit()
-        return redirect(url_for('dodaj_przesylke'))
+        # Generowanie kodu kreskowego po dodaniu przesyłki
+        filename = generuj_kod_kreskowy(numer_przesylki)
+        return render_template('pokaz_kod_kreskowy.html', filename=f"static/{numer_przesylki}.png")
     else:
         cursor.execute("SELECT IdFirmy, NazwaFirmy FROM Firmy")
         firmy = cursor.fetchall()
         return render_template('dodaj_przesylke.html', firmy=firmy)
+
 
 @app.route('/kod_kreskowy/<filename>')
 def pokaz_kod_kreskowy(filename):
