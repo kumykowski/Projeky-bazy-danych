@@ -76,7 +76,7 @@ def dodaj_przesylke():
         conn.commit()
         # Generowanie kodu kreskowego po dodaniu przesyłki
         filename = generuj_kod_kreskowy(numer_przesylki)
-        return render_template('pokaz_kod_kreskowy.html', filename=f"static/{numer_przesylki}.png")
+        return render_template('pokaz_kod_kreskowy.html', filename=f"{numer_przesylki}.png")
     else:
         cursor.execute("SELECT IdFirmy, NazwaFirmy FROM Firmy")
         firmy = cursor.fetchall()
