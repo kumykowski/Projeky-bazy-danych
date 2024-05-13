@@ -5,6 +5,7 @@ import barcode
 from barcode.writer import ImageWriter
 
 app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 conn_str = 'Driver={SQL Server};Server=TS-0002\\SQLEXPRESS;Database=ProjektPrzesylka;Trusted_Connection=yes;'
 
 conn = pyodbc.connect(conn_str)
@@ -50,42 +51,42 @@ def generuj_kod_kreskowy(numer_przesylki):
 def index():
     return render_template('index.html')
 
+
+
+@app.route('/<filename>')
+def pokaz_kod_kreskowy(filename):
+    return render_template('pokaz_kod_kreskowy.html', filename=filename)
+
+
+
 @app.route('/dodaj_przesylke', methods=['GET', 'POST'])
 def dodaj_przesylke():
     if request.method == 'POST':
-        od = request.form.get('od')
-        if od == '':
-            od = None
-        do = request.form['do']
-        gdzie_nadana = request.form['gdzie_nadana']
-        gdzie_do_odbioru = request.form['gdzie_do_odbioru']
-        klasa = request.form['klasa']
-        typ_przesylki = request.form.get('typ_przesylki')
+        od = request.form.get('od', '')
+        do = request.form.get('do', '')
+        gdzie_nadana = request.form.get('gdzie_nadana', '')
+        gdzie_do_odbioru = request.form.get('gdzie_do_odbioru', '')
+        klasa = request.form.get('klasa', '')
+        typ_przesylki = request.form.get('typ_przesylki', 'P')  # Default to private if not specified
+        nazwa_firmy = request.form.get('nazwa_firmy', None)
+        nip = request.form.get('nip', None)
 
-        if typ_przesylki == 'firmowa':
-            nazwa_firmy = request.form['nazwa_firmy']
-            nip = request.form['nip']
-            numer_przesylki = generuj_unikalny_numer('F')
-            cursor.execute("INSERT INTO PrzesylkiFirmowe (NumerPrzesylki, Od, Do, GdzieNadana, GdzieDoOdbioru, KlasaPrzesylki, IdFirmy) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                           (numer_przesylki, od, do, gdzie_nadana, gdzie_do_odbioru, klasa, None))
-        else:
-            numer_przesylki = generuj_unikalny_numer('P')
-            cursor.execute("INSERT INTO PrzesylkiOsobiste (NumerPrzesylki, Od, Do, GdzieNadana, GdzieDoOdbioru, KlasaPrzesylki) VALUES (?, ?, ?, ?, ?, ?)",
-                           (numer_przesylki, od, do, gdzie_nadana, gdzie_do_odbioru, klasa))
+        # Generowanie numeru przesyłki w Pythonie
+        numer_przesylki = generuj_unikalny_numer(typ_przesylki if typ_przesylki == 'F' else 'P')
 
-        conn.commit()
-        # Generowanie kodu kreskowego po dodaniu przesyłki
-        filename = generuj_kod_kreskowy(numer_przesylki)
-        return render_template('pokaz_kod_kreskowy.html', filename=f"{numer_przesylki}.png")
+        try:
+            cursor.execute("EXEC AddShipment @Od = ?, @Do = ?, @GdzieNadana = ?, @GdzieDoOdbioru = ?, @Klasa = ?, @TypPrzesylki = ?, @NazwaFirmy = ?, @NIP = ?, @NumerPrzesylki = ?",
+                           (od, do, gdzie_nadana, gdzie_do_odbioru, klasa, typ_przesylki, nazwa_firmy, nip, numer_przesylki))
+            conn.commit()
+
+            # Generowanie kodu kreskowego
+            filename = generuj_kod_kreskowy(numer_przesylki)
+            return redirect(url_for('pokaz_kod_kreskowy', filename=filename))
+        except Exception as e:
+            return f'Błąd: {str(e)}'
     else:
-        cursor.execute("SELECT IdFirmy, NazwaFirmy FROM Firmy")
-        firmy = cursor.fetchall()
-        return render_template('dodaj_przesylke.html', firmy=firmy)
+        return render_template('dodaj_przesylke.html')
 
-
-@app.route('/kod_kreskowy/<filename>')
-def pokaz_kod_kreskowy(filename):
-    return render_template('pokaz_kod_kreskowy.html', filename=filename)
 
 @app.route('/szukaj_kodu_kreskowego', methods=['GET', 'POST'])
 def szukaj_kodu_kreskowego():
@@ -107,30 +108,29 @@ def szukaj_kodu_kreskowego():
 @app.route('/zarzadzanie_przesylkami', methods=['GET', 'POST'])
 def zarzadzanie_przesylkami():
     if request.method == 'POST':
-        numer_pojedynczy = request.form.get('numer_pojedynczy')
-        numer_od = request.form.get('numer_od')
-        numer_do = request.form.get('numer_do')
-
-        try:
-            if numer_pojedynczy:
-                # Usuń przesyłkę z tabeli PrzesylkiOsobiste
-                cursor.execute("DELETE FROM PrzesylkiOsobiste WHERE NumerPrzesylki = ?", (numer_pojedynczy,))
-                # Usuń przesyłkę z tabeli PrzesylkiFirmowe
-                cursor.execute("DELETE FROM PrzesylkiFirmowe WHERE NumerPrzesylki = ?", (numer_pojedynczy,))
+        if 'status' in request.form:
+            numer = request.form['numer']
+            nowy_status = request.form['status']
+            try:
+                cursor.execute("EXEC UpdateShipmentStatus @NumerPrzesylki = ?, @NowyStatus = ?", (numer, nowy_status))
                 conn.commit()
+            except Exception as e:
+                return f'Błąd zmiany statusu: {str(e)}'
 
-            if numer_od and numer_do:
-                # Usuń zakres przesyłek z tabeli PrzesylkiOsobiste
-                cursor.execute("DELETE FROM PrzesylkiOsobiste WHERE NumerPrzesylki BETWEEN ? AND ?", (numer_od, numer_do))
-                # Usuń zakres przesyłek z tabeli PrzesylkiFirmowe
-                cursor.execute("DELETE FROM PrzesylkiFirmowe WHERE NumerPrzesylki BETWEEN ? AND ?", (numer_od, numer_do))
+        elif 'numer_od' in request.form and 'numer_do' in request.form:
+            numer_od = request.form['numer_od']
+            numer_do = request.form['numer_do']
+            try:
+                cursor.execute("EXEC RemoveShipmentRange @NumerOd = ?, @NumerDo = ?", (numer_od, numer_do))
                 conn.commit()
+            except Exception as e:
+                return f'Błąd usuwania zakresu przesyłek: {str(e)}'
+        
+        return redirect(url_for('zarzadzanie_przesylkami'))
+        
+    return render_template('zarzadzanie_przesylkami.html')
 
-            return redirect(url_for('zarzadzanie_przesylkami'))
-        except Exception as e:
-            return f'Błąd: {str(e)}', 500
-    else:
-        return render_template('zarzadzanie_przesylkami.html')
+
 
 
 @app.route('/wynik')
