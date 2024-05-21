@@ -172,12 +172,12 @@ def usun_firme():
         cursor.execute("""
             SELECT COUNT(*) 
             FROM PrzesylkiFirmowe 
-            WHERE IdFirmy = ? AND StanPrzesylki != 'Odebrane'
+            WHERE IdFirmy = ? AND StanPrzesylki != 'Odebrana'
         """, (id_firmy,))
         przesylki_count = cursor.fetchone()[0]
 
         if przesylki_count > 0:
-            error_message = "Nie można usunąć firmy, która ma przesyłki w stanie innym niż 'Odebrane'."
+            error_message = "Nie można usunąć firmy, która ma przesyłki w stanie innym niż 'Odebrana'."
             cursor.execute("SELECT IdFirmy, NazwaFirmy FROM Firmy")
             firmy = cursor.fetchall()
             return render_template('dodaj_firme.html', firmy=firmy, error=error_message)
@@ -185,7 +185,7 @@ def usun_firme():
         # Usuwanie przesyłek firmowych, które mają status 'Odebrane'
         cursor.execute("""
             DELETE FROM PrzesylkiFirmowe
-            WHERE IdFirmy = ? AND StanPrzesylki = 'Odebrane'
+            WHERE IdFirmy = ? AND StanPrzesylki = 'Odebrana'
         """, (id_firmy,))
         
         # Usuwanie firmy
