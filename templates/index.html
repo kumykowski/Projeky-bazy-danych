@@ -51,64 +51,44 @@
     </form>
 
 <script>
-    function toggleCompanySelect(event) {
-        console.log("Funkcja toggleCompanySelect() została wywołana.");
-        var checkBox = event.target;
-        var select = document.getElementById('nazwa_firmy');
-        var other = document.getElementById('other-company-inputs');
-        const companyInputs = document.querySelectorAll('.company-input');
+    document.addEventListener('DOMContentLoaded', function() {
+    const firmaSelect = document.querySelector('#nazwa_firmy');
+    const gdzieNadanaInput = document.querySelector('#gdzie_nadana');
+    const isCompanyCheckbox = document.querySelector('#is_company');
 
-        if (checkBox.checked) {
-            select.style.display = 'block';
-            other.style.display = 'none';
-            companyInputs.forEach(input => {
-                input.disabled = false;
-            });
-        } else {
-            select.style.display = 'none';
-            other.style.display = 'block';
-            select.value = '';  
-            companyInputs.forEach(input => {
-                input.disabled = true;
-                input.value = '';
-            });
+    // Funkcja aktualizująca widoczność i wartości pól zależnie od tego, czy firma jest wybrana
+    function toggleCompanyFields(display) {
+        const otherInputs = document.getElementById('other-company-inputs');
+        otherInputs.style.display = display ? 'block' : 'none';
+        if (!display) {
+            document.getElementById('od_firm').value = '';
+            document.getElementById('gdzie_nadana_firm').value = '';
         }
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const firmaSelect = document.querySelector('#nazwa_firmy');
-        const odInput = document.querySelector('#od');
-        const gdzieNadanaInput = document.querySelector('#gdzie_nadana');
-        const isCompanyCheckbox = document.querySelector('#is_company');
-
-        fetch('/firmy')
-            .then(response => response.json())
-            .then(data => {
-                const select = document.getElementById('nazwa_firmy');
-                data.forEach(firma => {
-                    const option = document.createElement('option');
-                    option.value = firma.IdFirmy;
-                    option.textContent = firma.NazwaFirmy;
-                    select.appendChild(option);
-                });
-            })
-            .catch(error => console.error('Błąd podczas pobierania danych o firmach:', error));
-
-        firmaSelect.addEventListener('change', function() {
-            const wybranaFirma = this.value;
-            if (wybranaFirma) {
-                fetch(`/adres_nadania?nazwa_firmy=${wybranaFirma}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        gdzieNadanaInput.value = data.adres_magazynu;
-                        odInput.value = firmaSelect.options[firmaSelect.selectedIndex].text;
-                    })
-                    .catch(error => console.error('Błąd podczas pobierania adresu nadania:', error));
-            }
-        });
-
-        isCompanyCheckbox.addEventListener('change', toggleCompanySelect);
+    isCompanyCheckbox.addEventListener('change', function() {
+        const isCompany = this.checked;
+        firmaSelect.style.display = isCompany ? 'block' : 'none';
+        toggleCompanyFields(isCompany);
+        if (!isCompany) {
+            firmaSelect.value = '';
+        }
     });
+
+    firmaSelect.addEventListener('change', function() {
+        const selectedFirmaId = this.value;
+        if (selectedFirmaId) {
+            fetch(`/adres_nadania?nazwa_firmy=${selectedFirmaId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('gdzie_nadana').value = data.adres_nadania;
+                })
+                .catch(error => console.error('Błąd podczas pobierania adresu nadania:', error));
+        } else {
+            document.getElementById('gdzie_nadana').value = '';
+        }
+    });
+});
 </script>
 </body>
 </html>
