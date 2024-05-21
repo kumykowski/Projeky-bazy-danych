@@ -9,42 +9,61 @@
         <input type="text" id="od" name="od" placeholder="Od.." required>
         <input type="text" id="do" name="do" placeholder="Do.." required>
         <input type="text" id="gdzie_nadana" name="gdzie_nadana" placeholder="Gdzie nadana" required>
-        <input type="text" name="gdzie_do_odbioru" placeholder="Gdzie do odbioru" required>
+        <input type="text" id="gdzie_do_odbioru" name="gdzie_do_odbioru" placeholder="Gdzie do odbioru" required>
         <select name="klasa">
             <option value="A">A</option>
             <option value="B">B</option>
             <option value="C">C</option>
         </select>
-        <label>
-            <input type="radio" name="typ_przesylki" value="osobista" checked>
-            Przesyłka prywatna
-        </label>
-        <label>
-            <input type="radio" name="typ_przesylki" value="firmowa">
-            Przesyłka firmowa
-        </label>
         <select id="nazwa_firmy" name="nazwa_firmy" style="display: none;">
             <option value="">Wybierz firmę...</option>
             {% for firma in firmy %}
-                <option value="{{ firma.IdFirmy }}">{{ firma.NazwaFirmy }}</option>
+            <option value="{{ firma.IdFirmy }}">{{ firma.NazwaFirmy }}</option>
             {% endfor %}
         </select>
-        <input type="text" id="nip" name="nip" placeholder="NIP" style="display: none;">
+        <label>
+            <input type="checkbox" id="is_company" name="is_company">
+            Przesyłka wysyłana przez firmę
+        </label>
         <button type="submit">Dodaj</button>
     </form>
-    <script>
-        const radioFirmowa = document.querySelector('input[name="typ_przesylki"][value="firmowa"]');
-        const selectFirma = document.getElementById('nazwa_firmy');
-        const inputNIP = document.getElementById('nip');
 
-        radioFirmowa.addEventListener('change', function() {
-            if (this.checked) {
-                selectFirma.style.display = 'block';
-                inputNIP.style.display = 'block';
-            } else {
-                selectFirma.style.display = 'none';
-                inputNIP.style.display = 'none';
-            }
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Skrypt został załadowany');
+            const firmaSelect = document.querySelector('#nazwa_firmy');
+            const isCompanyCheckbox = document.querySelector('#is_company');
+            const gdzieNadanaInput = document.querySelector('#gdzie_nadana');
+            const odInput = document.querySelector('#od');
+
+            console.log('Elementy zostały zidentyfikowane:', { firmaSelect, isCompanyCheckbox, gdzieNadanaInput, odInput });
+
+            isCompanyCheckbox.addEventListener('change', function() {
+                console.log('Zmiana checkboxa:', isCompanyCheckbox.checked);
+                firmaSelect.style.display = isCompanyCheckbox.checked ? 'block' : 'none';
+                odInput.readOnly = isCompanyCheckbox.checked;
+                gdzieNadanaInput.readOnly = isCompanyCheckbox.checked;
+            });
+
+            firmaSelect.addEventListener('change', function() {
+                console.log('Wybrano firmę:', firmaSelect.value);
+                if (firmaSelect.value) {
+                    fetch(`/adres_nadania?nazwa_firmy=${firmaSelect.value}`)
+                    .then(response => {
+                        console.log('Odpowiedź z serwera:', response);
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Dane adresu nadania:', data);
+                        gdzieNadanaInput.value = data.adres_nadania || 'Nie znaleziono adresu';
+                        odInput.value = firmaSelect.options[firmaSelect.selectedIndex].text;
+                    })
+                    .catch(error => console.error('Błąd podczas pobierania adresu:', error));
+                } else {
+                    gdzieNadanaInput.value = '';
+                    odInput.value = '';
+                }
+            });
         });
     </script>
 </body>
