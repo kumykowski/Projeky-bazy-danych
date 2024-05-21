@@ -46,11 +46,11 @@ def generuj_kod_kreskowy(numer_przesylki):
     return filename
 
 
-
 @app.route('/')
 def index():
-    return render_template('index.html')
-
+    cursor.execute("SELECT IdFirmy, NazwaFirmy FROM Firmy")
+    firmy = cursor.fetchall()
+    return render_template('index.html', firmy=firmy)
 
 
 @app.route('/<filename>')
@@ -157,13 +157,11 @@ def dodaj_firme():
         try:
             cursor.execute("INSERT INTO Firmy (NazwaFirmy, NIP, AdresMagazynu) VALUES (?, ?, ?)", (nazwa_firmy, nip, adres_magazynu))
             conn.commit()
-            return redirect(url_for('index'))
+            return redirect(url_for('index'))  # Przekierowanie do strony głównej
         except Exception as e:
             return f"Błąd podczas dodawania firmy: {str(e)}", 500
     else:
-        cursor.execute("SELECT IdFirmy, NazwaFirmy FROM Firmy")
-        firmy = cursor.fetchall()
-        return render_template('dodaj_firme.html', firmy=firmy)
+        return render_template('dodaj_firme.html')
 
 @app.route('/usun_firme', methods=['POST'])
 def usun_firme():

@@ -18,6 +18,9 @@
         </select>
         <select id="nazwa_firmy" name="nazwa_firmy" style="display: none;">
             <option value="">Wybierz firmę...</option>
+            {% for firma in firmy %}
+            <option value="{{ firma.IdFirmy }}">{{ firma.NazwaFirmy }}</option>
+            {% endfor %}
         </select>
         <div id="other-company-inputs" style="display: none;">
             <input type="text" id="od_firm" name="od_firm" placeholder="Od.." class="company-input" disabled>
