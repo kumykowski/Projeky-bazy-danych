@@ -5,7 +5,8 @@ import barcode
 from barcode.writer import ImageWriter
 
 app = Flask(__name__)
-app = Flask(__name__, static_folder='static')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mssql+pyodbc://TS-0002\\SQLEXPRESS/ProjektPrzesylka?driver=SQL+Server&trusted_connection=yes'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 conn_str = 'Driver={SQL Server};Server=TS-0002\\SQLEXPRESS;Database=ProjektPrzesylka;Trusted_Connection=yes;'
 
 conn = pyodbc.connect(conn_str)
@@ -63,7 +64,7 @@ def dodaj_przesylke():
         gdzie_nadana = request.form.get('gdzie_nadana')
         gdzie_do_odbioru = request.form.get('gdzie_do_odbioru')
         klasa = request.form.get('klasa')
-        is_company = request.form.get('is_company') == 'on'  # Sprawdź, czy checkbox 'is_company' został zaznaczony
+        is_company = request.form.get('is_company') == 'on'
 
         if is_company:
             nazwa_firmy = request.form.get('nazwa_firmy')
@@ -191,7 +192,11 @@ def usun_firme():
         # Usuwanie firmy
         cursor.execute("DELETE FROM Firmy WHERE IdFirmy = ?", (id_firmy,))
         conn.commit()
-        return redirect(url_for('dodaj_firme'))
+
+        # Odświeżenie listy firm w widokach
+        cursor.execute("SELECT IdFirmy, NazwaFirmy FROM Firmy")
+        firmy = cursor.fetchall()
+        return render_template('dodaj_firme.html', firmy=firmy)
     except Exception as e:
         return f"Błąd podczas usuwania firmy: {str(e)}", 500
 
