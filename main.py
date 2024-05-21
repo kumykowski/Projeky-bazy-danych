@@ -42,9 +42,16 @@ def numer_juz_istnieje(numer):
 def generuj_kod_kreskowy(numer_przesylki):
     barcode_class = barcode.get_barcode_class('code128')
     my_barcode = barcode_class(numer_przesylki, writer=ImageWriter())
+    # Zapisz kod kreskowy w katalogu static, dostępny publicznie
     filename = my_barcode.save(f"static/{numer_przesylki}")
     return filename
 
+@app.route('/dodaj_przesylke', methods=['GET', 'POST'])
+def dodaj_przesylke():
+    if request.method == 'POST':
+        # kod pozostaje bez zmian aż do momentu generacji kodu kreskowego
+        filename = generuj_kod_kreszkowy(numer_przesylki)
+        return redirect(url_for('pokaz_kod_kreskowy', filename=f"{numer_przesylki}.png"))
 
 @app.route('/')
 def index():
@@ -53,7 +60,7 @@ def index():
     return render_template('index.html', firmy=firmy)
 
 
-@app.route('/<filename>')
+@app.route('/pokaz_kod_kreskowy/<filename>')
 def pokaz_kod_kreskowy(filename):
     return render_template('pokaz_kod_kreskowy.html', filename=filename)
 
@@ -76,6 +83,9 @@ def dodaj_przesylke():
                 cursor.execute("INSERT INTO PrzesylkiFirmowe (NumerPrzesylki, Od, Do, GdzieNadana, GdzieDoOdbioru, KlasaPrzesylki, IdFirmy) VALUES (?, ?, ?, ?, ?, ?, ?)",
                                (numer_przesylki, od, do, gdzie_nadana, gdzie_do_odbioru, klasa, None))  # Tutaj może być potrzebny ID firmy zamiast None
                 conn.commit()
+                # Generowanie kodu kreskowego
+                filename = generuj_kod_kreskowy(numer_przesylki)
+                return redirect(url_for('pokaz_kod_kreskowy', filename=f"{numer_przesylki}.png"))
             except Exception as e:
                 return f'Błąd przy dodawaniu przesyłki firmowej: {str(e)}'
         else:
@@ -84,10 +94,12 @@ def dodaj_przesylke():
                 cursor.execute("INSERT INTO PrzesylkiOsobiste (NumerPrzesylki, Od, Do, GdzieNadana, GdzieDoOdbioru, KlasaPrzesylki) VALUES (?, ?, ?, ?, ?, ?)",
                                (numer_przesylki, od, do, gdzie_nadana, gdzie_do_odbioru, klasa))
                 conn.commit()
+                # Generowanie kodu kreskowego
+                filename = generuj_kod_kreskowy(numer_przesylki)
+                return redirect(url_for('pokaz_kod_kreskowy', filename=f"{numer_przesylki}.png"))
             except Exception as e:
                 return f'Błąd przy dodawaniu przesyłki prywatnej: {str(e)}'
 
-        return redirect(url_for('index'))
     else:
         return render_template('dodaj_przesylke.html')
 
