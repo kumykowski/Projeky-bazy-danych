@@ -58,35 +58,38 @@ def pokaz_kod_kreskowy(filename):
     return render_template('pokaz_kod_kreskowy.html', filename=filename)
 
 
-
 @app.route('/dodaj_przesylke', methods=['GET', 'POST'])
 def dodaj_przesylke():
     if request.method == 'POST':
-        od = request.form.get('od', '')
-        do = request.form.get('do', '')
-        gdzie_nadana = request.form.get('gdzie_nadana', '')
-        gdzie_do_odbioru = request.form.get('gdzie_do_odbioru', '')
-        klasa = request.form.get('klasa', '')
-        typ_przesylki = request.form.get('typ_przesylki', 'P')  # Default to private if not specified
-        nazwa_firmy = request.form.get('nazwa_firmy', None)
-        nip = request.form.get('nip', None)
+        od = request.form.get('od')
+        do = request.form.get('do')
+        gdzie_nadana = request.form.get('gdzie_nadana')
+        gdzie_do_odbioru = request.form.get('gdzie_do_odbioru')
+        klasa = request.form.get('klasa')
+        is_company = request.form.get('is_company') == 'on'  # Sprawdź, czy checkbox 'is_company' został zaznaczony
 
-        # Generowanie numeru przesyłki w Pythonie
-        numer_przesylki = generuj_unikalny_numer(typ_przesylki if typ_przesylki == 'F' else 'P')
+        if is_company:
+            nazwa_firmy = request.form.get('nazwa_firmy')
+            nip = request.form.get('nip')
+            numer_przesylki = generuj_unikalny_numer('F')
+            try:
+                cursor.execute("INSERT INTO PrzesylkiFirmowe (NumerPrzesylki, Od, Do, GdzieNadana, GdzieDoOdbioru, KlasaPrzesylki, IdFirmy) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                               (numer_przesylki, od, do, gdzie_nadana, gdzie_do_odbioru, klasa, None))  # Tutaj może być potrzebny ID firmy zamiast None
+                conn.commit()
+            except Exception as e:
+                return f'Błąd przy dodawaniu przesyłki firmowej: {str(e)}'
+        else:
+            numer_przesylki = generuj_unikalny_numer('P')
+            try:
+                cursor.execute("INSERT INTO PrzesylkiOsobiste (NumerPrzesylki, Od, Do, GdzieNadana, GdzieDoOdbioru, KlasaPrzesylki) VALUES (?, ?, ?, ?, ?, ?)",
+                               (numer_przesylki, od, do, gdzie_nadana, gdzie_do_odbioru, klasa))
+                conn.commit()
+            except Exception as e:
+                return f'Błąd przy dodawaniu przesyłki prywatnej: {str(e)}'
 
-        try:
-            cursor.execute("EXEC AddShipment @Od = ?, @Do = ?, @GdzieNadana = ?, @GdzieDoOdbioru = ?, @Klasa = ?, @TypPrzesylki = ?, @NazwaFirmy = ?, @NIP = ?, @NumerPrzesylki = ?",
-                           (od, do, gdzie_nadana, gdzie_do_odbioru, klasa, typ_przesylki, nazwa_firmy, nip, numer_przesylki))
-            conn.commit()
-
-            # Generowanie kodu kreskowego
-            filename = generuj_kod_kreskowy(numer_przesylki)
-            return redirect(url_for('pokaz_kod_kreskowy', filename=filename))
-        except Exception as e:
-            return f'Błąd: {str(e)}'
+        return redirect(url_for('index'))
     else:
         return render_template('dodaj_przesylke.html')
-
 
 @app.route('/szukaj_kodu_kreskowego', methods=['GET', 'POST'])
 def szukaj_kodu_kreskowego():
