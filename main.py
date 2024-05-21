@@ -181,12 +181,20 @@ def usun_firme():
             cursor.execute("SELECT IdFirmy, NazwaFirmy FROM Firmy")
             firmy = cursor.fetchall()
             return render_template('dodaj_firme.html', firmy=firmy, error=error_message)
-
+        
+        # Usuwanie przesyłek firmowych, które mają status 'Odebrane'
+        cursor.execute("""
+            DELETE FROM PrzesylkiFirmowe
+            WHERE IdFirmy = ? AND StanPrzesylki = 'Odebrane'
+        """, (id_firmy,))
+        
+        # Usuwanie firmy
         cursor.execute("DELETE FROM Firmy WHERE IdFirmy = ?", (id_firmy,))
         conn.commit()
         return redirect(url_for('dodaj_firme'))
     except Exception as e:
         return f"Błąd podczas usuwania firmy: {str(e)}", 500
+
 
 @app.route('/firmy')
 def firmy():
