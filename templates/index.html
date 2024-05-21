@@ -51,41 +51,43 @@
     </form>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('Skrypt został załadowany');
-        const firmaSelect = document.querySelector('#nazwa_firmy');
-        const isCompanyCheckbox = document.querySelector('#is_company');
-        const gdzieNadanaInput = document.querySelector('#gdzie_nadana');
-        const odInput = document.querySelector('#od');
-
-        console.log('Elementy zostały zidentyfikowane:', { firmaSelect, isCompanyCheckbox, gdzieNadanaInput, odInput });
-
-        isCompanyCheckbox.addEventListener('change', function() {
-            console.log('Zmiana checkboxa:', isCompanyCheckbox.checked);
-            document.getElementById('other-company-inputs').style.display = isCompanyCheckbox.checked ? 'block' : 'none';
-            firmaSelect.style.display = isCompanyCheckbox.checked ? 'block' : 'none';
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Skrypt został załadowany');
+            const firmaSelect = document.querySelector('#nazwa_firmy');
+            const isCompanyCheckbox = document.querySelector('#is_company');
+            const gdzieNadanaInput = document.querySelector('#gdzie_nadana');
+            const odInput = document.querySelector('#od');
+    
+            console.log('Elementy zostały zidentyfikowane:', { firmaSelect, isCompanyCheckbox, gdzieNadanaInput, odInput });
+    
+            isCompanyCheckbox.addEventListener('change', function() {
+                console.log('Zmiana checkboxa:', isCompanyCheckbox.checked);
+                firmaSelect.style.display = isCompanyCheckbox.checked ? 'block' : 'none';
+                odInput.readOnly = isCompanyCheckbox.checked;
+                gdzieNadanaInput.readOnly = isCompanyCheckbox.checked;
+            });
+    
+            firmaSelect.addEventListener('change', function() {
+                console.log('Wybrano firmę:', firmaSelect.value);
+                if (firmaSelect.value) {
+                    fetch(`/adres_nadania?nazwa_firmy=${firmaSelect.value}`)
+                    .then(response => {
+                        console.log('Odpowiedź z serwera:', response);
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Dane adresu nadania:', data);
+                        gdzieNadanaInput.value = data.adres_nadania || 'Nie znaleziono adresu';
+                        odInput.value = firmaSelect.options[firmaSelect.selectedIndex].text;
+                    })
+                    .catch(error => console.error('Błąd podczas pobierania adresu:', error));
+                } else {
+                    gdzieNadanaInput.value = '';
+                    odInput.value = '';
+                }
+            });
         });
-
-        firmaSelect.addEventListener('change', function() {
-            console.log('Wybrano firmę:', firmaSelect.value);
-            if (firmaSelect.value) {
-                fetch(`/adres_nadania?nazwa_firmy=${firmaSelect.value}`)
-                .then(response => {
-                    console.log('Odpowiedź z serwera:', response);
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Dane adresu nadania:', data);
-                    gdzieNadanaInput.value = data.adres_nadania || 'Nie znaleziono adresu';
-                    odInput.value = firmaSelect.options[firmaSelect.selectedIndex].text;
-                })
-                .catch(error => console.error('Błąd podczas pobierania adresu:', error));
-            } else {
-                gdzieNadanaInput.value = '';
-                odInput.value = '';
-            }
-        });
-    });
 </script>
+    
 </body>
 </html>

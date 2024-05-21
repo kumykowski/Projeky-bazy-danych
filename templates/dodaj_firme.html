@@ -24,31 +24,13 @@
     </form>
 
     <form action="{{ url_for('usun_firme') }}" method="POST">
-        <label for="nazwa_firmy_usun">Wybierz firmę do usunięcia:</label>
-        <select id="nazwa_firmy_usun" name="nazwa_firmy" required>
+        <label for="nazwa_firmy">Wybierz firmę do usunięcia:</label>
+        <select id="nazwa_firmy" name="nazwa_firmy" required>
             {% for firma in firmy %}
                 <option value="{{ firma.IdFirmy }}">{{ firma.NazwaFirmy }}</option>
             {% endfor %}
         </select><br><br>
         <button type="submit">Usuń firmę</button>
     </form>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const selectUsunFirma = document.querySelector('#nazwa_firmy_usun');
-
-            fetch('/firmy')
-                .then(response => response.json())
-                .then(data => {
-                    data.forEach(firma => {
-                        const option = document.createElement('option');
-                        option.value = firma.IdFirmy;
-                        option.textContent = firma.NazwaFirmy;
-                        selectUsunFirma.appendChild(option);
-                    });
-                })
-                .catch(error => console.error('Błąd podczas pobierania danych o firmach:', error));
-        });
-    </script>
 </body>
 </html>
