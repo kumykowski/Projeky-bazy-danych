@@ -50,32 +50,41 @@
         <a href="/zarzadzanie_przesylkami">zarzadzanie przesylkami</a>
     </form>
 
-    <script>
+<script>
         document.addEventListener('DOMContentLoaded', function() {
-            const firmaSelect = document.querySelector('#nazwa_firmy');
-            const isCompanyCheckbox = document.querySelector('#is_company');
-            const odInput = document.querySelector('#od_firm'); // Upewnij się, że te selektory odpowiadają twoim elementom w HTML
-            const gdzieNadanaInput = document.querySelector('#gdzie_nadana_firm');
-        
-            isCompanyCheckbox.addEventListener('change', function() {
-                const display = this.checked;
-                document.getElementById('other-company-inputs').style.display = display ? 'block' : 'none';
-                firmaSelect.style.display = display ? 'block' : 'none';
-            });
-        
-            firmaSelect.addEventListener('change', function() {
-                const firmaId = this.value;
-                if (firmaId) {
-                    fetch(`/adres_nadania?nazwa_firmy=${firmaId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        gdzieNadanaInput.value = data.adres_nadania || ''; // Ustaw wartość adresu, albo wyczyść, jeśli nie ma danych
-                    })
-                    .catch(error => console.error('Błąd podczas pobierania adresu:', error));
-                }
-            });
-        });
-        </script>
+    console.log('Skrypt został załadowany');
+    const firmaSelect = document.querySelector('#nazwa_firmy');
+    const isCompanyCheckbox = document.querySelector('#is_company');
+    const gdzieNadanaInput = document.querySelector('#gdzie_nadana_firm');
+
+    console.log('Elementy zostały zidentyfikowane:', { firmaSelect, isCompanyCheckbox, gdzieNadanaInput });
+
+    isCompanyCheckbox.addEventListener('change', function() {
+        console.log('Zmiana checkboxa:', isCompanyCheckbox.checked);
+        document.getElementById('other-company-inputs').style.display = isCompanyCheckbox.checked ? 'block' : 'none';
+        firmaSelect.style.display = isCompanyCheckbox.checked ? 'block' : 'none';
+    });
+
+    firmaSelect.addEventListener('change', function() {
+        console.log('Wybrano firmę:', firmaSelect.value);
+        if (firmaSelect.value) {
+            fetch(`/adres_nadania?nazwa_firmy=${firmaSelect.value}`)
+            .then(response => {
+                console.log('Odpowiedź z serwera:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Dane adresu nadania:', data);
+                gdzieNadanaInput.value = data.adres_nadania || 'Nie znaleziono adresu';
+            })
+            .catch(error => console.error('Błąd podczas pobierania adresu:', error));
+        } else {
+            gdzieNadanaInput.value = '';
+        }
+    });
+});
+
+</script>
         
 </body>
 </html>
