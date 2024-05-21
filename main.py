@@ -200,7 +200,7 @@ def adres_nadania():
         cursor.execute("SELECT AdresMagazynu FROM Firmy WHERE NazwaFirmy = ?", (nazwa_firmy,))
         adres_nadania = cursor.fetchone()
         if adres_nadania:
-            return jsonify({'adres_nadania': adres_nadania.AdresMagazynu})
+            return jsonify({'adres_nadania': adres_nadania[0]})
     return jsonify({'adres_nadania': ''})
 
 if __name__ == '__main__':
