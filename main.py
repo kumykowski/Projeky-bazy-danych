@@ -190,11 +190,12 @@ def usun_firme():
 def adres_nadania():
     nazwa_firmy = request.args.get('nazwa_firmy')
     if nazwa_firmy:
-        cursor.execute("SELECT AdresMagazynu FROM Firmy WHERE NazwaFirmy = ?", (nazwa_firmy,))
+        cursor.execute("SELECT AdresMagazynu FROM Firmy WHERE IdFirmy = ?", (nazwa_firmy,))
         adres_nadania = cursor.fetchone()
         if adres_nadania:
             return jsonify({'adres_nadania': adres_nadania[0]})
     return jsonify({'adres_nadania': ''})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
