@@ -169,18 +169,17 @@ def dodaj_firme():
 def usun_firme():
     id_firmy = request.form.get('nazwa_firmy')
     try:
-        # Usuwanie firmy
         cursor.execute("DELETE FROM Firmy WHERE IdFirmy = ?", (id_firmy,))
         conn.commit()
         return redirect(url_for('dodaj_firme'))
     except Exception as e:
-        # Sprawdzenie, czy błąd jest spowodowany ograniczeniem klucza obcego
-        if 'foreign key constraint fails' in str(e):
+        if 'The DELETE statement conflicted with the REFERENCE constraint' in str(e):
             error_message = "Nie można usunąć firmy, która wysłała przesyłki."
         else:
             error_message = f"Błąd podczas usuwania firmy: {str(e)}"
         return render_template('dodaj_firme.html', error=error_message)
-    
+
+
 @app.route('/adres_nadania')
 def adres_nadania():
     nazwa_firmy = request.args.get('nazwa_firmy')
