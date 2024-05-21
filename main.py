@@ -58,7 +58,7 @@ def dodaj_przesylke():
         klasa = request.form.get('klasa')
         is_company = request.form.get('is_company') == 'on'
 
-        data_nadania = datetime.now()  # Aktualna data i czas
+        data_nadania = datetime.now()
 
         if is_company:
             nazwa_firmy = request.form.get('nazwa_firmy')
