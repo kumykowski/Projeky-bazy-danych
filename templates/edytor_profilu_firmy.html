@@ -30,3 +30,21 @@ CREATE TABLE DaneFirm (
     NajczestszyOdbiorca VARCHAR(255),
     IloscPrzesylekDoNajczestszegoOdbiorcy INT
 );
+
+
+
+-- Przykładowe dane
+INSERT INTO Uzytkownicy (Imie, Nazwisko) VALUES ('Jan', 'Kowalski');
+INSERT INTO Uzytkownicy (Imie, Nazwisko) VALUES ('Anna', 'Nowak');
+
+INSERT INTO DaneUzytkownikow (IdUzytkownika, Adres, Ostatnie10Przesylek, NajczestszyOdbiorca, IloscPrzesylekDoNajczestszegoOdbiorcy)
+VALUES (1, 'Warszawa', 'Przesylka1, Przesylka2', 'Marta Kowalska', 2);
+
+INSERT INTO DaneUzytkownikow (IdUzytkownika, Adres, Ostatnie10Przesylek, NajczestszyOdbiorca, IloscPrzesylekDoNajczestszegoOdbiorcy)
+VALUES (2, 'Kraków', 'Przesylka3, Przesylka4', 'Piotr Nowak', 3);
+
+INSERT INTO DaneFirm (NazwaFirmy, NIP, AdresMagazynu, IloscWyslanychPrzesylek, DataWyslaniaOstatniejPrzesylki, NajczestszyOdbiorca, IloscPrzesylekDoNajczestszegoOdbiorcy)
+VALUES ('Firma A', '1234567890', 'Warszawa', 10, GETDATE(), 'Jan Kowalski', 5);
+
+INSERT INTO DaneFirm (NazwaFirmy, NIP, AdresMagazynu, IloscWyslanychPrzesylek, DataWyslaniaOstatniejPrzesylki, NajczestszyOdbiorca, IloscPrzesylekDoNajczestszegoOdbiorcy)
+VALUES ('Firma B', '0987654321', 'Kraków', 20, GETDATE(), 'Anna Nowak', 8);
