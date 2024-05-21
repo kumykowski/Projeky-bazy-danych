@@ -50,7 +50,7 @@ def generuj_kod_kreskowy(numer_przesylki):
 def dodaj_przesylke():
     if request.method == 'POST':
         # kod pozostaje bez zmian aż do momentu generacji kodu kreskowego
-        filename = generuj_kod_kreszkowy(numer_przesylki)
+        filename = generuj_kod_kreskowy(numer_przesylki)
         return redirect(url_for('pokaz_kod_kreskowy', filename=f"{numer_przesylki}.png"))
 
 @app.route('/')
