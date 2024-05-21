@@ -1,4 +1,1 @@
-    ALTER TABLE PrzesylkiFirmowe
-    ADD CONSTRAINT FK_PrzesylkiFirmowe_Firmy
-    FOREIGN KEY (IdFirmy) REFERENCES Firmy(IdFirmy)
-    ON DELETE NO ACTION;
+Błąd podczas usuwania firmy: ('23000', '[23000] [Microsoft][ODBC SQL Server Driver][SQL Server]The DELETE statement conflicted with the REFERENCE constraint "FK_PrzesylkiFirmowe_Firmy". The conflict occurred in database "ProjektPrzesylka", table "dbo.PrzesylkiFirmowe", column \'IdFirmy\'. (547) (SQLExecDirectW); [23000] [Microsoft][ODBC SQL Server Driver][SQL Server]The statement has been terminated. (3621)')
