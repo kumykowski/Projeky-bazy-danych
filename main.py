@@ -3,9 +3,9 @@ import pyodbc
 import random
 import barcode
 from barcode.writer import ImageWriter
+from datetime import datetime
 
 app = Flask(__name__)
-app = Flask(__name__, static_folder='static')
 conn_str = 'Driver={SQL Server};Server=TS-0002\\SQLEXPRESS;Database=ProjektPrzesylka;Trusted_Connection=yes;'
 
 conn = pyodbc.connect(conn_str)
@@ -16,13 +16,6 @@ def szukaj_przesylki(numer_przesylki):
         query = "SELECT NumerPrzesylki, Od, Do, GdzieNadana, GdzieDoOdbioru, KlasaPrzesylki, StanPrzesylki FROM Przesylki WHERE NumerPrzesylki = ?"
         cursor.execute(query, (numer_przesylki,))
         przesylki = cursor.fetchall()
-
-        for przesylka in przesylki:
-            if 'F' in str(przesylka[0]):
-                przesylka[0] += 'F'
-            else:
-                przesylka[0] += 'P'
-            
         return przesylki
     except Exception as e:
         print(f"Błąd podczas wyszukiwania przesyłki: {e}")
@@ -63,23 +56,32 @@ def dodaj_przesylke():
         gdzie_nadana = request.form.get('gdzie_nadana')
         gdzie_do_odbioru = request.form.get('gdzie_do_odbioru')
         klasa = request.form.get('klasa')
-        is_company = request.form.get('is_company') == 'on'  # Sprawdź, czy checkbox 'is_company' został zaznaczony
+        is_company = request.form.get('is_company') == 'on'
+
+        data_nadania = datetime.now()  # Aktualna data i czas
 
         if is_company:
             nazwa_firmy = request.form.get('nazwa_firmy')
-            nip = request.form.get('nip')
             numer_przesylki = generuj_unikalny_numer('F')
+            print(f"Numer przesyłki firmowej: {numer_przesylki}")
+            print(f"Dane przesyłki firmowej: {od}, {do}, {gdzie_nadana}, {gdzie_do_odbioru}, {klasa}, {nazwa_firmy}, {data_nadania}")
             try:
-                cursor.execute("INSERT INTO PrzesylkiFirmowe (NumerPrzesylki, Od, Do, GdzieNadana, GdzieDoOdbioru, KlasaPrzesylki, IdFirmy) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                               (numer_przesylki, od, do, gdzie_nadana, gdzie_do_odbioru, klasa, nazwa_firmy))
+                cursor.execute("""
+                    INSERT INTO PrzesylkiFirmowe (NumerPrzesylki, Od, Do, GdzieNadana, GdzieDoOdbioru, KlasaPrzesylki, IdFirmy, DataNadania)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (numer_przesylki, od, do, gdzie_nadana, gdzie_do_odbioru, klasa, nazwa_firmy, data_nadania))
                 conn.commit()
             except Exception as e:
                 return f'Błąd przy dodawaniu przesyłki firmowej: {str(e)}'
         else:
             numer_przesylki = generuj_unikalny_numer('P')
+            print(f"Numer przesyłki osobistej: {numer_przesylki}")
+            print(f"Dane przesyłki osobistej: {od}, {do}, {gdzie_nadana}, {gdzie_do_odbioru}, {klasa}, {data_nadania}")
             try:
-                cursor.execute("INSERT INTO PrzesylkiOsobiste (NumerPrzesylki, Od, Do, GdzieNadana, GdzieDoOdbioru, KlasaPrzesylki) VALUES (?, ?, ?, ?, ?, ?)",
-                               (numer_przesylki, od, do, gdzie_nadana, gdzie_do_odbioru, klasa))
+                cursor.execute("""
+                    INSERT INTO PrzesylkiOsobiste (NumerPrzesylki, Od, Do, GdzieNadana, GdzieDoOdbioru, KlasaPrzesylki, DataNadania)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (numer_przesylki, od, do, gdzie_nadana, gdzie_do_odbioru, klasa, data_nadania))
                 conn.commit()
             except Exception as e:
                 return f'Błąd przy dodawaniu przesyłki prywatnej: {str(e)}'
@@ -153,6 +155,7 @@ def dodaj_firme():
         nazwa_firmy = request.form['nazwa_firmy']
         nip = request.form['nip']
         adres_magazynu = request.form['adres_magazynu']
+        print(f"Dodawanie firmy: {nazwa_firmy}, {nip}, {adres_magazynu}")
         try:
             cursor.execute("INSERT INTO Firmy (NazwaFirmy, NIP, AdresMagazynu) VALUES (?, ?, ?)", (nazwa_firmy, nip, adres_magazynu))
             conn.commit()
@@ -170,7 +173,6 @@ def dodaj_firme():
 def usun_firme():
     id_firmy = request.form.get('nazwa_firmy')
     try:
-        # Sprawdzenie, czy firma ma przesyłki w stanie innym niż 'Odebrana'
         cursor.execute("""
             SELECT COUNT(*) 
             FROM PrzesylkiFirmowe 
@@ -184,13 +186,11 @@ def usun_firme():
             firmy = cursor.fetchall()
             return render_template('dodaj_firme.html', firmy=firmy, error=error_message)
         
-        # Usuwanie przesyłek firmowych, które mają status 'Odebrana'
         cursor.execute("""
             DELETE FROM PrzesylkiFirmowe
             WHERE IdFirmy = ? AND StanPrzesylki = 'Odebrana'
         """, (id_firmy,))
         
-        # Usuwanie firmy
         cursor.execute("DELETE FROM Firmy WHERE IdFirmy = ?", (id_firmy,))
         conn.commit()
         cursor.execute("EXEC UpdateDaneFirm")
