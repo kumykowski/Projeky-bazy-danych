@@ -64,7 +64,7 @@ def dodaj_przesylke():
         gdzie_nadana = request.form.get('gdzie_nadana')
         gdzie_do_odbioru = request.form.get('gdzie_do_odbioru')
         klasa = request.form.get('klasa')
-        is_company = request.form.get('is_company') == 'on'
+        is_company = request.form.get('is_company') == 'on'  # Sprawdź, czy checkbox 'is_company' został zaznaczony
 
         if is_company:
             nazwa_firmy = request.form.get('nazwa_firmy')
@@ -169,7 +169,7 @@ def dodaj_firme():
 def usun_firme():
     id_firmy = request.form.get('nazwa_firmy')
     try:
-        # Sprawdzenie, czy firma ma przesyłki w stanie innym niż 'Odebrane'
+        # Sprawdzenie, czy firma ma przesyłki w stanie innym niż 'Odebrana'
         cursor.execute("""
             SELECT COUNT(*) 
             FROM PrzesylkiFirmowe 
@@ -183,7 +183,7 @@ def usun_firme():
             firmy = cursor.fetchall()
             return render_template('dodaj_firme.html', firmy=firmy, error=error_message)
         
-        # Usuwanie przesyłek firmowych, które mają status 'Odebrane'
+        # Usuwanie przesyłek firmowych, które mają status 'Odebrana'
         cursor.execute("""
             DELETE FROM PrzesylkiFirmowe
             WHERE IdFirmy = ? AND StanPrzesylki = 'Odebrana'
@@ -192,11 +192,7 @@ def usun_firme():
         # Usuwanie firmy
         cursor.execute("DELETE FROM Firmy WHERE IdFirmy = ?", (id_firmy,))
         conn.commit()
-
-        # Odświeżenie listy firm w widokach
-        cursor.execute("SELECT IdFirmy, NazwaFirmy FROM Firmy")
-        firmy = cursor.fetchall()
-        return render_template('dodaj_firme.html', firmy=firmy)
+        return redirect(url_for('dodaj_firme'))
     except Exception as e:
         return f"Błąd podczas usuwania firmy: {str(e)}", 500
 

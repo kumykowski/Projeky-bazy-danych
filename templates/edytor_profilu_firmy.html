@@ -1,1 +1,32 @@
-Błąd podczas usuwania firmy: ('23000', '[23000] [Microsoft][ODBC SQL Server Driver][SQL Server]The DELETE statement conflicted with the REFERENCE constraint "FK_PrzesylkiFirmowe_Firmy". The conflict occurred in database "ProjektPrzesylka", table "dbo.PrzesylkiFirmowe", column \'IdFirmy\'. (547) (SQLExecDirectW); [23000] [Microsoft][ODBC SQL Server Driver][SQL Server]The statement has been terminated. (3621)')
+-- Utworzenie tabeli Uzytkownicy
+CREATE TABLE Uzytkownicy (
+    IdUzytkownika INT PRIMARY KEY IDENTITY,
+    Imie VARCHAR(255),
+    Nazwisko VARCHAR(255)
+);
+
+-- Utworzenie tabeli DaneUzytkownikow
+CREATE TABLE DaneUzytkownikow (
+    IdDaneUzytkownika INT PRIMARY KEY IDENTITY,
+    IdUzytkownika INT FOREIGN KEY REFERENCES Uzytkownicy(IdUzytkownika),
+    Adres VARCHAR(255),
+    Ostatnie10Przesylek VARCHAR(MAX),
+    NajczestszyOdbiorca VARCHAR(255),
+    IloscPrzesylekDoNajczestszegoOdbiorcy INT
+);
+
+-- Usunięcie istniejącej tabeli DaneFirm
+DROP TABLE IF EXISTS DaneFirm;
+
+-- Utworzenie tabeli DaneFirm
+CREATE TABLE DaneFirm (
+    IdFirmy INT PRIMARY KEY IDENTITY,
+    NazwaFirmy VARCHAR(255),
+    NIP VARCHAR(255),
+    AdresMagazynu VARCHAR(255),
+    IloscWyslanychPrzesylek INT,
+    DataWyslaniaOstatniejPrzesylki DATETIME,
+    DataDodaniaDoSystemu DATETIME DEFAULT GETDATE(),
+    NajczestszyOdbiorca VARCHAR(255),
+    IloscPrzesylekDoNajczestszegoOdbiorcy INT
+);
