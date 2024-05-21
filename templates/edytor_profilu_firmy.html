@@ -1,3 +1,44 @@
+CREATE TRIGGER trg_AfterInsertPrzesylkiOsobiste
+ON PrzesylkiOsobiste
+AFTER INSERT
+AS
+BEGIN
+    EXEC UpdateDaneUzytkownikow;
+END;
+GO
+
+
+
+
+CREATE TRIGGER trg_AfterInsertPrzesylkiFirmowe
+ON PrzesylkiFirmowe
+AFTER INSERT
+AS
+BEGIN
+    EXEC UpdateDaneFirm;
+END;
+GO
+
+
+
+CREATE TRIGGER trg_AfterInsertFirmy
+ON Firmy
+AFTER INSERT
+AS
+BEGIN
+    EXEC UpdateDaneFirm;
+END;
+GO
+
+
+
+
+
+
+
+
+
+
 CREATE PROCEDURE UpdateDaneUzytkownikow
 AS
 BEGIN
@@ -31,12 +72,7 @@ BEGIN
     JOIN 
         PrzesylkiOsobiste p ON p.Od = CONCAT(u.Imie, ' ', u.Nazwisko);
 END;
-
-
-
-
-
-
+GO
 
 
 
@@ -82,48 +118,8 @@ BEGIN
     GROUP BY 
         f.NazwaFirmy, f.NIP, f.AdresMagazynu, f.IdFirmy;
 END;
+GO
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
--- Wyzwalacz dla tabeli PrzesylkiOsobiste
-CREATE TRIGGER trg_AfterInsertPrzesylkiOsobiste
-ON PrzesylkiOsobiste
-AFTER INSERT
-AS
-BEGIN
-    EXEC UpdateDaneUzytkownikow;
-END;
-
--- Wyzwalacz dla tabeli PrzesylkiFirmowe
-CREATE TRIGGER trg_AfterInsertPrzesylkiFirmowe
-ON PrzesylkiFirmowe
-AFTER INSERT
-AS
-BEGIN
-    EXEC UpdateDaneFirm;
-END;
-
--- Wyzwalacz dla tabeli Firmy
-CREATE TRIGGER trg_AfterInsertFirmy
-ON Firmy
-AFTER INSERT
-AS
-BEGIN
-    EXEC UpdateDaneFirm;
-END;
 
