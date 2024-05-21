@@ -3,9 +3,7 @@ import pyodbc
 import random
 import barcode
 from barcode.writer import ImageWriter
-from flask_migrate import Migrate
 
-migrate = Migrate(app, db)
 app = Flask(__name__)
 app = Flask(__name__, static_folder='static')
 conn_str = 'Driver={SQL Server};Server=TS-0002\\SQLEXPRESS;Database=ProjektPrzesylka;Trusted_Connection=yes;'
@@ -64,19 +62,30 @@ def pokaz_kod_kreskowy(filename):
 @app.route('/dodaj_przesylke', methods=['GET', 'POST'])
 def dodaj_przesylke():
     if request.method == 'POST':
-        adres_nadawcy = Adres(ulica=request.form['ulica_nadawcy'], numer_domu=request.form['numer_domu_nadawcy'],
-                              miasto=request.form['miasto_nadawcy'], kraj=request.form['kraj_nadawcy'])
-        db.session.add(adres_nadawcy)
-        db.session.flush()  # Zapewnia przypisanie ID dla adresu nadawcy
-        nowa_przesylka = Przesylka(numer_przesylki=generuj_unikalny_numer('P'), 
-                                   imie_nadawcy=request.form['imie_nadawcy'], 
-                                   nazwisko_nadawcy=request.form['nazwisko_nadawcy'], 
-                                   adres_nadawcy_id=adres_nadawcy.id,
-                                   klasa_przesylki=request.form['klasa'])
-        db.session.add(nowa_przesylka)
-        db.session.commit()
-        return redirect(url_for('index'))
-    return render_template('dodaj_przesylke.html')
+        od = request.form.get('od', '')
+        do = request.form.get('do', '')
+        gdzie_nadana = request.form.get('gdzie_nadana', '')
+        gdzie_do_odbioru = request.form.get('gdzie_do_odbioru', '')
+        klasa = request.form.get('klasa', '')
+        typ_przesylki = request.form.get('typ_przesylki', 'P')  # Default to private if not specified
+        nazwa_firmy = request.form.get('nazwa_firmy', None)
+        nip = request.form.get('nip', None)
+
+        # Generowanie numeru przesyłki w Pythonie
+        numer_przesylki = generuj_unikalny_numer(typ_przesylki if typ_przesylki == 'F' else 'P')
+
+        try:
+            cursor.execute("EXEC AddShipment @Od = ?, @Do = ?, @GdzieNadana = ?, @GdzieDoOdbioru = ?, @Klasa = ?, @TypPrzesylki = ?, @NazwaFirmy = ?, @NIP = ?, @NumerPrzesylki = ?",
+                           (od, do, gdzie_nadana, gdzie_do_odbioru, klasa, typ_przesylki, nazwa_firmy, nip, numer_przesylki))
+            conn.commit()
+
+            # Generowanie kodu kreskowego
+            filename = generuj_kod_kreskowy(numer_przesylki)
+            return redirect(url_for('pokaz_kod_kreskowy', filename=filename))
+        except Exception as e:
+            return f'Błąd: {str(e)}'
+    else:
+        return render_template('dodaj_przesylke.html')
 
 
 @app.route('/szukaj_kodu_kreskowego', methods=['GET', 'POST'])
