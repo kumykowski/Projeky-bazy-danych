@@ -7,6 +7,9 @@
 </head>
 <body>
     <h1>Dodaj Firmę</h1>
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
     <form action="{{ url_for('dodaj_firme') }}" method="POST">
         <label for="nazwa_firmy">Nazwa Firmy:</label>
         <input type="text" id="nazwa_firmy" name="nazwa_firmy" required><br><br>

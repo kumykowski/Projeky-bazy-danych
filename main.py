@@ -175,16 +175,23 @@ def dodaj_firme():
 def usun_firme():
     id_firmy = request.form.get('nazwa_firmy')
     try:
+        # Sprawdź, czy firma wysłała paczki, które nie mają statusu "odebrana"
+        cursor.execute("""
+            SELECT COUNT(*) FROM PrzesylkiFirmowe
+            WHERE IdFirmy = ? AND StanPrzesylki != 'odebrana'
+        """, (id_firmy,))
+        count = cursor.fetchone()[0]
+
+        if count > 0:
+            error_message = "Nie można usunąć firmy, która wysłała paczki bez statusu 'odebrana'."
+            return render_template('dodaj_firme.html', error=error_message)
+
+        # Usuń firmę, jeśli wszystkie paczki mają status "odebrana"
         cursor.execute("DELETE FROM Firmy WHERE IdFirmy = ?", (id_firmy,))
         conn.commit()
         return redirect(url_for('dodaj_firme'))
     except Exception as e:
-        if 'The DELETE statement conflicted with the REFERENCE constraint' in str(e):
-            error_message = "Nie można usunąć firmy, która wysłała przesyłki."
-        else:
-            error_message = f"Błąd podczas usuwania firmy: {str(e)}"
-        return render_template('dodaj_firme.html', error=error_message)
-
+        return f"Błąd podczas usuwania firmy: {str(e)}", 500
 
 @app.route('/adres_nadania')
 def adres_nadania():
