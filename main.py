@@ -5,8 +5,7 @@ import barcode
 from barcode.writer import ImageWriter
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mssql+pyodbc://TS-0002\\SQLEXPRESS/ProjektPrzesylka?driver=SQL+Server&trusted_connection=yes'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app = Flask(__name__, static_folder='static')
 conn_str = 'Driver={SQL Server};Server=TS-0002\\SQLEXPRESS;Database=ProjektPrzesylka;Trusted_Connection=yes;'
 
 conn = pyodbc.connect(conn_str)
@@ -157,6 +156,8 @@ def dodaj_firme():
         try:
             cursor.execute("INSERT INTO Firmy (NazwaFirmy, NIP, AdresMagazynu) VALUES (?, ?, ?)", (nazwa_firmy, nip, adres_magazynu))
             conn.commit()
+            cursor.execute("EXEC UpdateDaneFirm")
+            conn.commit()
             return redirect(url_for('dodaj_firme'))
         except Exception as e:
             return f"Błąd podczas dodawania firmy: {str(e)}", 500
@@ -192,10 +193,11 @@ def usun_firme():
         # Usuwanie firmy
         cursor.execute("DELETE FROM Firmy WHERE IdFirmy = ?", (id_firmy,))
         conn.commit()
+        cursor.execute("EXEC UpdateDaneFirm")
+        conn.commit()
         return redirect(url_for('dodaj_firme'))
     except Exception as e:
         return f"Błąd podczas usuwania firmy: {str(e)}", 500
-
 
 @app.route('/firmy')
 def firmy():

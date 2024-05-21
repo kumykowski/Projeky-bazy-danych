@@ -1,50 +1,129 @@
--- Utworzenie tabeli Uzytkownicy
-CREATE TABLE Uzytkownicy (
-    IdUzytkownika INT PRIMARY KEY IDENTITY,
-    Imie VARCHAR(255),
-    Nazwisko VARCHAR(255)
-);
+CREATE PROCEDURE UpdateDaneUzytkownikow
+AS
+BEGIN
+    -- Usunięcie starych danych
+    DELETE FROM DaneUzytkownikow;
 
--- Utworzenie tabeli DaneUzytkownikow
-CREATE TABLE DaneUzytkownikow (
-    IdDaneUzytkownika INT PRIMARY KEY IDENTITY,
-    IdUzytkownika INT FOREIGN KEY REFERENCES Uzytkownicy(IdUzytkownika),
-    Adres VARCHAR(255),
-    Ostatnie10Przesylek VARCHAR(MAX),
-    NajczestszyOdbiorca VARCHAR(255),
-    IloscPrzesylekDoNajczestszegoOdbiorcy INT
-);
+    -- Dodanie nowych danych
+    INSERT INTO DaneUzytkownikow (IdUzytkownika, Adres, Ostatnie10Przesylek, NajczestszyOdbiorca, IloscPrzesylekDoNajczestszegoOdbiorcy)
+    SELECT 
+        u.IdUzytkownika,
+        p.GdzieNadana,
+        STUFF((SELECT ', ' + CAST(pr.NumerPrzesylki AS VARCHAR)
+               FROM PrzesylkiOsobiste pr
+               WHERE pr.Od = CONCAT(u.Imie, ' ', u.Nazwisko)
+               FOR XML PATH('')), 1, 2, '') AS Ostatnie10Przesylek,
+        (SELECT TOP 1 pr.Do
+         FROM PrzesylkiOsobiste pr
+         WHERE pr.Od = CONCAT(u.Imie, ' ', u.Nazwisko)
+         GROUP BY pr.Do
+         ORDER BY COUNT(pr.Do) DESC) AS NajczestszyOdbiorca,
+        (SELECT COUNT(*)
+         FROM PrzesylkiOsobiste pr
+         WHERE pr.Od = CONCAT(u.Imie, ' ', u.Nazwisko) 
+         AND pr.Do = (SELECT TOP 1 pr2.Do
+                      FROM PrzesylkiOsobiste pr2
+                      WHERE pr2.Od = CONCAT(u.Imie, ' ', u.Nazwisko)
+                      GROUP BY pr2.Do
+                      ORDER BY COUNT(pr2.Do) DESC)) AS IloscPrzesylekDoNajczestszegoOdbiorcy
+    FROM 
+        Uzytkownicy u
+    JOIN 
+        PrzesylkiOsobiste p ON p.Od = CONCAT(u.Imie, ' ', u.Nazwisko);
+END;
 
--- Usunięcie istniejącej tabeli DaneFirm
-DROP TABLE IF EXISTS DaneFirm;
-
--- Utworzenie tabeli DaneFirm
-CREATE TABLE DaneFirm (
-    IdFirmy INT PRIMARY KEY IDENTITY,
-    NazwaFirmy VARCHAR(255),
-    NIP VARCHAR(255),
-    AdresMagazynu VARCHAR(255),
-    IloscWyslanychPrzesylek INT,
-    DataWyslaniaOstatniejPrzesylki DATETIME,
-    DataDodaniaDoSystemu DATETIME DEFAULT GETDATE(),
-    NajczestszyOdbiorca VARCHAR(255),
-    IloscPrzesylekDoNajczestszegoOdbiorcy INT
-);
 
 
 
--- Przykładowe dane
-INSERT INTO Uzytkownicy (Imie, Nazwisko) VALUES ('Jan', 'Kowalski');
-INSERT INTO Uzytkownicy (Imie, Nazwisko) VALUES ('Anna', 'Nowak');
 
-INSERT INTO DaneUzytkownikow (IdUzytkownika, Adres, Ostatnie10Przesylek, NajczestszyOdbiorca, IloscPrzesylekDoNajczestszegoOdbiorcy)
-VALUES (1, 'Warszawa', 'Przesylka1, Przesylka2', 'Marta Kowalska', 2);
 
-INSERT INTO DaneUzytkownikow (IdUzytkownika, Adres, Ostatnie10Przesylek, NajczestszyOdbiorca, IloscPrzesylekDoNajczestszegoOdbiorcy)
-VALUES (2, 'Kraków', 'Przesylka3, Przesylka4', 'Piotr Nowak', 3);
 
-INSERT INTO DaneFirm (NazwaFirmy, NIP, AdresMagazynu, IloscWyslanychPrzesylek, DataWyslaniaOstatniejPrzesylki, NajczestszyOdbiorca, IloscPrzesylekDoNajczestszegoOdbiorcy)
-VALUES ('Firma A', '1234567890', 'Warszawa', 10, GETDATE(), 'Jan Kowalski', 5);
 
-INSERT INTO DaneFirm (NazwaFirmy, NIP, AdresMagazynu, IloscWyslanychPrzesylek, DataWyslaniaOstatniejPrzesylki, NajczestszyOdbiorca, IloscPrzesylekDoNajczestszegoOdbiorcy)
-VALUES ('Firma B', '0987654321', 'Kraków', 20, GETDATE(), 'Anna Nowak', 8);
+
+
+
+
+
+
+
+
+
+CREATE PROCEDURE UpdateDaneFirm
+AS
+BEGIN
+    -- Usunięcie starych danych
+    DELETE FROM DaneFirm;
+
+    -- Dodanie nowych danych
+    INSERT INTO DaneFirm (NazwaFirmy, NIP, AdresMagazynu, IloscWyslanychPrzesylek, DataWyslaniaOstatniejPrzesylki, NajczestszyOdbiorca, IloscPrzesylekDoNajczestszegoOdbiorcy)
+    SELECT 
+        f.NazwaFirmy,
+        f.NIP,
+        f.AdresMagazynu,
+        COUNT(p.NumerPrzesylki) AS IloscWyslanychPrzesylek,
+        MAX(p.DataNadania) AS DataWyslaniaOstatniejPrzesylki,
+        (SELECT TOP 1 p.Do
+         FROM PrzesylkiFirmowe p
+         WHERE p.IdFirmy = f.IdFirmy
+         GROUP BY p.Do
+         ORDER BY COUNT(p.Do) DESC) AS NajczestszyOdbiorca,
+        (SELECT COUNT(*)
+         FROM PrzesylkiFirmowe p
+         WHERE p.IdFirmy = f.IdFirmy 
+         AND p.Do = (SELECT TOP 1 p2.Do
+                      FROM PrzesylkiFirmowe p2
+                      WHERE p2.IdFirmy = f.IdFirmy
+                      GROUP BY p2.Do
+                      ORDER BY COUNT(p2.Do) DESC)) AS IloscPrzesylekDoNajczestszegoOdbiorcy
+    FROM 
+        Firmy f
+    LEFT JOIN 
+        PrzesylkiFirmowe p ON p.IdFirmy = f.IdFirmy
+    GROUP BY 
+        f.NazwaFirmy, f.NIP, f.AdresMagazynu, f.IdFirmy;
+END;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- Wyzwalacz dla tabeli PrzesylkiOsobiste
+CREATE TRIGGER trg_AfterInsertPrzesylkiOsobiste
+ON PrzesylkiOsobiste
+AFTER INSERT
+AS
+BEGIN
+    EXEC UpdateDaneUzytkownikow;
+END;
+
+-- Wyzwalacz dla tabeli PrzesylkiFirmowe
+CREATE TRIGGER trg_AfterInsertPrzesylkiFirmowe
+ON PrzesylkiFirmowe
+AFTER INSERT
+AS
+BEGIN
+    EXEC UpdateDaneFirm;
+END;
+
+-- Wyzwalacz dla tabeli Firmy
+CREATE TRIGGER trg_AfterInsertFirmy
+ON Firmy
+AFTER INSERT
+AS
+BEGIN
+    EXEC UpdateDaneFirm;
+END;
+
