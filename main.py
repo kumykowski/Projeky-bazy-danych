@@ -196,6 +196,12 @@ def adres_nadania():
             return jsonify({'adres_nadania': adres_nadania[0]})
     return jsonify({'adres_nadania': ''})
 
+@app.route('/firmy')
+def firmy():
+    cursor.execute("SELECT IdFirmy, NazwaFirmy, NIP, AdresMagazynu FROM Firmy")
+    firmy = cursor.fetchall()
+    return jsonify([{ 'IdFirmy': firma.IdFirmy, 'NazwaFirmy': firma.NazwaFirmy, 'NIP': firma.NIP, 'AdresMagazynu': firma.AdresMagazynu } for firma in firmy])
+
 
 if __name__ == '__main__':
     app.run(debug=True)
