@@ -42,7 +42,6 @@ def numer_juz_istnieje(numer):
 def generuj_kod_kreskowy(numer_przesylki):
     barcode_class = barcode.get_barcode_class('code128')
     my_barcode = barcode_class(numer_przesylki, writer=ImageWriter())
-    # Zapisz kod kreskowy w katalogu static, dostępny publicznie
     filename = my_barcode.save(f"static/{numer_przesylki}")
     return filename
 
@@ -52,11 +51,9 @@ def index():
     firmy = cursor.fetchall()
     return render_template('index.html', firmy=firmy)
 
-
-@app.route('/pokaz_kod_kreskowy/<filename>')
+@app.route('/<filename>')
 def pokaz_kod_kreskowy(filename):
     return render_template('pokaz_kod_kreskowy.html', filename=filename)
-
 
 @app.route('/dodaj_przesylke', methods=['GET', 'POST'])
 def dodaj_przesylke():
@@ -74,11 +71,8 @@ def dodaj_przesylke():
             numer_przesylki = generuj_unikalny_numer('F')
             try:
                 cursor.execute("INSERT INTO PrzesylkiFirmowe (NumerPrzesylki, Od, Do, GdzieNadana, GdzieDoOdbioru, KlasaPrzesylki, IdFirmy) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                               (numer_przesylki, od, do, gdzie_nadana, gdzie_do_odbioru, klasa, None))  # Tutaj może być potrzebny ID firmy zamiast None
+                               (numer_przesylki, od, do, gdzie_nadana, gdzie_do_odbioru, klasa, nazwa_firmy))
                 conn.commit()
-                # Generowanie kodu kreskowego
-                filename = generuj_kod_kreskowy(numer_przesylki)
-                return redirect(url_for('pokaz_kod_kreskowy', filename=f"{numer_przesylki}.png"))
             except Exception as e:
                 return f'Błąd przy dodawaniu przesyłki firmowej: {str(e)}'
         else:
@@ -87,14 +81,15 @@ def dodaj_przesylke():
                 cursor.execute("INSERT INTO PrzesylkiOsobiste (NumerPrzesylki, Od, Do, GdzieNadana, GdzieDoOdbioru, KlasaPrzesylki) VALUES (?, ?, ?, ?, ?, ?)",
                                (numer_przesylki, od, do, gdzie_nadana, gdzie_do_odbioru, klasa))
                 conn.commit()
-                # Generowanie kodu kreskowego
-                filename = generuj_kod_kreskowy(numer_przesylki)
-                return redirect(url_for('pokaz_kod_kreskowy', filename=f"{numer_przesylki}.png"))
             except Exception as e:
                 return f'Błąd przy dodawaniu przesyłki prywatnej: {str(e)}'
 
+        filename = generuj_kod_kreskowy(numer_przesylki)
+        return redirect(url_for('pokaz_kod_kreskowy', filename=f"{numer_przesylki}.png"))
     else:
-        return render_template('dodaj_przesylke.html')
+        cursor.execute("SELECT IdFirmy, NazwaFirmy FROM Firmy")
+        firmy = cursor.fetchall()
+        return render_template('dodaj_przesylke.html', firmy=firmy)
 
 @app.route('/szukaj_kodu_kreskowego', methods=['GET', 'POST'])
 def szukaj_kodu_kreskowego():
@@ -111,7 +106,6 @@ def szukaj_kodu_kreskowego():
             return f"Błąd serwera: {str(e)}", 500
     else:
         return render_template('szukaj_kodu_kreskowego.html')
-
 
 @app.route('/zarzadzanie_przesylkami', methods=['GET', 'POST'])
 def zarzadzanie_przesylkami():
@@ -138,9 +132,6 @@ def zarzadzanie_przesylkami():
         
     return render_template('zarzadzanie_przesylkami.html')
 
-
-
-
 @app.route('/wynik')
 def wynik():
     numer = request.args.get('numer')
@@ -165,17 +156,18 @@ def dodaj_firme():
         try:
             cursor.execute("INSERT INTO Firmy (NazwaFirmy, NIP, AdresMagazynu) VALUES (?, ?, ?)", (nazwa_firmy, nip, adres_magazynu))
             conn.commit()
-            return redirect(url_for('index'))  # Przekierowanie do strony głównej
+            return redirect(url_for('dodaj_firme'))
         except Exception as e:
             return f"Błąd podczas dodawania firmy: {str(e)}", 500
     else:
-        return render_template('dodaj_firme.html')
+        cursor.execute("SELECT IdFirmy, NazwaFirmy FROM Firmy")
+        firmy = cursor.fetchall()
+        return render_template('dodaj_firme.html', firmy=firmy)
 
 @app.route('/usun_firme', methods=['POST'])
 def usun_firme():
     id_firmy = request.form.get('nazwa_firmy')
     try:
-        # Sprawdź, czy firma wysłała paczki, które nie mają statusu "odebrana"
         cursor.execute("""
             SELECT COUNT(*) FROM PrzesylkiFirmowe
             WHERE IdFirmy = ? AND StanPrzesylki != 'odebrana'
@@ -184,14 +176,21 @@ def usun_firme():
 
         if count > 0:
             error_message = "Nie można usunąć firmy, która wysłała paczki bez statusu 'odebrana'."
-            return render_template('dodaj_firme.html', error=error_message)
+            cursor.execute("SELECT IdFirmy, NazwaFirmy FROM Firmy")
+            firmy = cursor.fetchall()
+            return render_template('dodaj_firme.html', error=error_message, firmy=firmy)
 
-        # Usuń firmę, jeśli wszystkie paczki mają status "odebrana"
         cursor.execute("DELETE FROM Firmy WHERE IdFirmy = ?", (id_firmy,))
         conn.commit()
         return redirect(url_for('dodaj_firme'))
     except Exception as e:
         return f"Błąd podczas usuwania firmy: {str(e)}", 500
+
+@app.route('/firmy')
+def firmy():
+    cursor.execute("SELECT IdFirmy, NazwaFirmy, NIP, AdresMagazynu FROM Firmy")
+    firmy = cursor.fetchall()
+    return jsonify([{ 'IdFirmy': firma.IdFirmy, 'NazwaFirmy': firma.NazwaFirmy, 'NIP': firma.NIP, 'AdresMagazynu': firma.AdresMagazynu } for firma in firmy])
 
 @app.route('/adres_nadania')
 def adres_nadania():
@@ -200,15 +199,8 @@ def adres_nadania():
         cursor.execute("SELECT AdresMagazynu FROM Firmy WHERE IdFirmy = ?", (nazwa_firmy,))
         adres_nadania = cursor.fetchone()
         if adres_nadania:
-            return jsonify({'adres_nadania': adres_nadania[0]})
+            return jsonify({'adres_nadania': adres_nadania.AdresMagazynu})
     return jsonify({'adres_nadania': ''})
-
-@app.route('/firmy')
-def firmy():
-    cursor.execute("SELECT IdFirmy, NazwaFirmy, NIP, AdresMagazynu FROM Firmy")
-    firmy = cursor.fetchall()
-    return jsonify([{ 'IdFirmy': firma.IdFirmy, 'NazwaFirmy': firma.NazwaFirmy, 'NIP': firma.NIP, 'AdresMagazynu': firma.AdresMagazynu } for firma in firmy])
-
 
 if __name__ == '__main__':
     app.run(debug=True)

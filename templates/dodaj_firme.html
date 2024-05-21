@@ -24,8 +24,11 @@
     </form>
 
     <form action="{{ url_for('usun_firme') }}" method="POST">
-        <label for="nazwa_firmy">Wybierz firmę do usunięcia:</label>
+        <label for="nazwa_firmy_usun">Wybierz firmę do usunięcia:</label>
         <select id="nazwa_firmy_usun" name="nazwa_firmy" required>
+            {% for firma in firmy %}
+                <option value="{{ firma.IdFirmy }}">{{ firma.NazwaFirmy }}</option>
+            {% endfor %}
         </select><br><br>
         <button type="submit">Usuń firmę</button>
     </form>
