@@ -169,18 +169,18 @@ def dodaj_firme():
 def usun_firme():
     id_firmy = request.form.get('nazwa_firmy')
     try:
+        # Usuwanie firmy
         cursor.execute("DELETE FROM Firmy WHERE IdFirmy = ?", (id_firmy,))
         conn.commit()
         return redirect(url_for('dodaj_firme'))
     except Exception as e:
-        return f"Błąd podczas usuwania firmy: {str(e)}", 500
-
-@app.route('/firmy')
-def firmy():
-    cursor.execute("SELECT IdFirmy, NazwaFirmy, NIP, AdresMagazynu FROM Firmy")
-    firmy = cursor.fetchall()
-    return jsonify([{ 'IdFirmy': firma.IdFirmy, 'NazwaFirmy': firma.NazwaFirmy, 'NIP': firma.NIP, 'AdresMagazynu': firma.AdresMagazynu } for firma in firmy])
-
+        # Sprawdzenie, czy błąd jest spowodowany ograniczeniem klucza obcego
+        if 'foreign key constraint fails' in str(e):
+            error_message = "Nie można usunąć firmy, która wysłała przesyłki."
+        else:
+            error_message = f"Błąd podczas usuwania firmy: {str(e)}"
+        return render_template('dodaj_firme.html', error=error_message)
+    
 @app.route('/adres_nadania')
 def adres_nadania():
     nazwa_firmy = request.args.get('nazwa_firmy')
